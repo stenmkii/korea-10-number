@@ -3,137 +3,145 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>韓国語 固有数詞クイズ</title>
+    <title>韓国語 固有数詞マスター</title>
     <style>
-        :root {
-            --primary-color: #4a90e2;
-            --bg-color: #f0f2f5;
-        }
+        :root { --primary: #4a90e2; --bg: #f0f2f5; --success: #28a745; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: var(--bg-color);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden; /* スクロールを禁止 */
+            font-family: -apple-system, sans-serif;
+            margin: 0; display: flex; justify-content: center; align-items: center;
+            height: 100vh; background: var(--bg); overflow: hidden;
         }
         #app {
-            width: 90%;
-            max-width: 400px;
-            background: white;
-            padding: 25px;
-            border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            text-align: center;
+            width: 92%; max-width: 400px; background: white; padding: 20px;
+            border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center;
         }
-        .progress {
-            font-size: 0.9rem;
-            color: #666;
-            margin-bottom: 10px;
+        .menu-btn {
+            width: 100%; padding: 15px; margin: 10px 0; border: none;
+            border-radius: 12px; background: white; border: 2px solid var(--primary);
+            color: var(--primary); font-weight: bold; font-size: 1rem; cursor: pointer;
         }
-        .question-text {
-            font-size: 1.5rem;
-            font-weight: bold;
-            margin-bottom: 20px;
-            color: #333;
+        .menu-btn:active { background: var(--primary); color: white; }
+        .question-text { font-size: 1.4rem; font-weight: bold; margin: 20px 0; min-height: 3rem; display: flex; align-items: center; justify-content: center;}
+        .options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .opt-btn {
+            padding: 12px 5px; font-size: 0.95rem; border: 1px solid #ddd;
+            border-radius: 10px; background: #fff; cursor: pointer;
         }
-        .options {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-        button.opt-btn {
-            padding: 15px 10px;
-            font-size: 1rem;
-            border: 2px solid #eee;
-            border-radius: 12px;
-            background: white;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        button.opt-btn:active {
-            background-color: var(--primary-color);
-            color: white;
-            transform: scale(0.95);
-        }
-        .result-screen h2 { color: var(--primary-color); }
-        .restart-btn {
-            margin-top: 20px;
-            padding: 12px 30px;
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 25px;
-            font-size: 1rem;
-        }
+        .opt-btn:active { background: #eef; transform: scale(0.98); }
+        .hidden { display: none; }
+        .progress { font-size: 0.8rem; color: #888; margin-bottom: 5px; }
     </style>
 </head>
 <body>
 
 <div id="app">
-    <div id="quiz-container">
-        <div class="progress" id="progress">第 1 / 20 問</div>
-        <div id="section-label" style="font-size: 0.8rem; color: var(--primary-color);">Section 1: 韓 → 日</div>
-        <div class="question-text" id="question">読み込み中...</div>
+    <!-- メニュー画面 -->
+    <div id="menu">
+        <h2 style="margin-top:0">学習モードを選択</h2>
+        <button class="menu-btn" onclick="startQuiz('kn-jp')">韓国語 → 日本語</button>
+        <button class="menu-btn" onclick="startQuiz('jp-kn')">日本語 → 韓国語</button>
+        <button class="menu-btn" onclick="startQuiz('unit')">単位をつける (形に注意！)</button>
+    </div>
+
+    <!-- クイズ画面 -->
+    <div id="quiz" class="hidden">
+        <div class="progress" id="progress"></div>
+        <div id="section-title" style="color:var(--primary); font-size:0.8rem; font-weight:bold;"></div>
+        <div class="question-text" id="question"></div>
         <div class="options" id="options"></div>
+        <button class="menu-btn" style="margin-top:20px; border-color:#ccc; color:#666;" onclick="showMenu()">メニューに戻る</button>
+    </div>
+
+    <!-- 結果画面 -->
+    <div id="result" class="hidden">
+        <h2 id="result-status">完了！</h2>
+        <p id="result-score" style="font-size:1.5rem; font-weight:bold;"></p>
+        <button class="menu-btn" style="background:var(--primary); color:white;" onclick="showMenu()">もう一度</button>
     </div>
 </div>
 
 <script>
-    const originalData = [
-        { kr: "hana", jp: "1つ" }, { kr: "tur", jp: "2つ" }, { kr: "se", jp: "3つ" },
-        { kr: "ne", jp: "4つ" }, { kr: "taso", jp: "5つ" }, { kr: "yoso", jp: "6つ" },
-        { kr: "irgo", jp: "7つ" }, { kr: "yodor", jp: "8つ" }, { kr: "ahop", jp: "9つ" },
-        { kr: "yor", jp: "10つ" }
+    const base = [
+        { n: 1, kr: "hana", mod: "han", jp: "1つ" },
+        { n: 2, kr: "tur", mod: "tu", jp: "2つ" },
+        { n: 3, kr: "se", mod: "se", jp: "3つ" },
+        { n: 4, kr: "ne", mod: "ne", jp: "4つ" },
+        { n: 5, kr: "taso", mod: "taso", jp: "5つ" },
+        { n: 6, kr: "yoso", mod: "yoso", jp: "6つ" },
+        { n: 7, kr: "irgo", mod: "irgo", jp: "7つ" },
+        { n: 8, kr: "yodor", mod: "yodor", jp: "8つ" },
+        { n: 9, kr: "ahop", mod: "ahop", jp: "9つ" },
+        { n: 10, kr: "yor", mod: "yor", jp: "10つ" }
     ];
 
-    let quizList = [];
+    let currentQuestions = [];
     let currentIndex = 0;
     let score = 0;
 
-    function initQuiz() {
-        // Section 1: 韓 -> 日
-        const s1 = originalData.map(item => ({ q: item.kr, a: item.jp, type: "韓 → 日", choices: originalData.map(d => d.jp) }));
-        // Section 2: 日 -> 韓
-        const s2 = originalData.map(item => ({ q: item.jp, a: item.kr, type: "日 → 韓", choices: originalData.map(d => d.kr) }));
-        
-        quizList = [...s1, ...s2];
-        currentIndex = 0;
+    function showMenu() {
+        document.getElementById('menu').classList.remove('hidden');
+        document.getElementById('quiz').classList.add('hidden');
+        document.getElementById('result').classList.add('hidden');
+    }
+
+    function startQuiz(mode) {
+        currentQuestions = [];
         score = 0;
+        currentIndex = 0;
+
+        if (mode === 'kn-jp') {
+            currentQuestions = base.map(i => ({ q: i.kr, a: i.jp, title: "韓国語 → 日本語", choices: base.map(b => b.jp) }));
+        } else if (mode === 'jp-kn') {
+            currentQuestions = base.map(i => ({ q: i.jp, a: i.kr, title: "日本語 → 韓国語", choices: base.map(b => b.kr) }));
+        } else if (mode === 'unit') {
+            const units = [
+                { name: "個", code: "ke", label: "個" },
+                { name: "歳", code: "sar", label: "歳" },
+                { name: "時", code: "si", label: "時" }
+            ];
+            base.forEach(i => {
+                const u = units[Math.floor(Math.random() * units.length)];
+                // 1,2,3,4 は変形したもの、それ以外はそのまま
+                const correct = (i.n <= 4 ? i.mod : i.kr) + " " + u.code;
+                currentQuestions.push({
+                    q: `${i.n}${u.label}`,
+                    a: correct,
+                    title: "単位との組み合わせ (変形に注意！)",
+                    // 選択肢はその問題の単位に合わせた変形/非変形のランダム
+                    choices: base.map(b => (b.n <= 4 ? b.mod : b.kr) + " " + u.code)
+                });
+            });
+        }
+
+        currentQuestions.sort(() => Math.random() - 0.5);
+        document.getElementById('menu').classList.add('hidden');
+        document.getElementById('quiz').classList.remove('hidden');
         showQuestion();
     }
 
     function showQuestion() {
-        const current = quizList[currentIndex];
-        document.getElementById('progress').innerText = `第 ${currentIndex + 1} / ${quizList.length} 問`;
-        document.getElementById('section-label').innerText = current.type;
-        document.getElementById('question').innerText = current.q;
-        
-        const optionsContainer = document.getElementById('options');
-        optionsContainer.innerHTML = '';
+        const qData = currentQuestions[currentIndex];
+        document.getElementById('progress').innerText = `${currentIndex + 1} / ${currentQuestions.length}`;
+        document.getElementById('section-title').innerText = qData.title;
+        document.getElementById('question').innerText = qData.q;
 
-        // 選択肢をシャッフルして表示
-        const shuffledChoices = [...current.choices].sort(() => Math.random() - 0.5);
+        const optDiv = document.getElementById('options');
+        optDiv.innerHTML = '';
         
-        shuffledChoices.forEach(choice => {
+        // 選択肢をシャッフル
+        [...qData.choices].sort(() => Math.random() - 0.5).forEach(choice => {
             const btn = document.createElement('button');
             btn.className = 'opt-btn';
             btn.innerText = choice;
             btn.onclick = () => handleAnswer(choice);
-            optionsContainer.appendChild(btn);
+            optDiv.appendChild(btn);
         });
     }
 
     function handleAnswer(selected) {
-        if (selected === quizList[currentIndex].a) {
-            score++;
-        }
-        
+        if (selected === currentQuestions[currentIndex].a) score++;
         currentIndex++;
-        if (currentIndex < quizList.length) {
+        if (currentIndex < currentQuestions.length) {
             showQuestion();
         } else {
             showResult();
@@ -141,17 +149,11 @@
     }
 
     function showResult() {
-        const app = document.getElementById('app');
-        app.innerHTML = `
-            <div class="result-screen">
-                <h2>学習完了！</h2>
-                <p style="font-size: 1.2rem;">スコア: ${score} / ${quizList.length}</p>
-                <button class="restart-btn" onclick="location.reload()">もう一度挑戦</button>
-            </div>
-        `;
+        document.getElementById('quiz').classList.add('hidden');
+        const resDiv = document.getElementById('result');
+        resDiv.classList.remove('hidden');
+        document.getElementById('result-score').innerText = `${score} / ${currentQuestions.length}`;
     }
-
-    initQuiz();
 </script>
 
 </body>
